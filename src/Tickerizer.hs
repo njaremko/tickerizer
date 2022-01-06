@@ -102,7 +102,7 @@ processInput t input =
   in firstSymbol <> secondSymbol <> thirdSymbol <> leftover
   where
     doLookup x = case TE.match t . TTE.encodeUtf8 $ T.toUpper x of
-        Nothing -> "Nothing"
+        Nothing -> x
         Just (x0, _, _) -> TTE.decodeUtf8 x0
     
     handleChunk x = case T.length x of
