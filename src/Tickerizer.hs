@@ -10,15 +10,13 @@ module Tickerizer
     ( runServer, AppState(..)
     ) where
 
-
 import Pre
 import Servant
 import qualified Data.Text as T
 import Network.Wai.Handler.Warp (run)
-import Data.Trie (Trie )
-import qualified Data.Trie as TE
-import Data.Text.Encoding as TTE
-import Servant.HTML.Lucid
+import Data.Trie (Trie)
+import qualified Data.Trie as Trie
+import Servant.HTML.Lucid ( HTML )
 import Lucid (Html, body_, p_, a_, With (with), href_)
 
 type Web sig m =
@@ -69,9 +67,9 @@ tickerizeApi = tickerize
           (thirdSymbol, leftover) = handleChunk secondRemainder
       in firstSymbol <> secondSymbol <> thirdSymbol <> leftover
       where
-        doLookup x = case TE.match t . TTE.encodeUtf8 $ T.toUpper x of
+        doLookup x = case Trie.match t . encodeUtf8 $ T.toUpper x of
             Nothing -> x
-            Just (x0, _, _) -> TTE.decodeUtf8 x0
+            Just (x0, _, _) -> decodeUtf8 x0
         
         handleChunk x = case T.length x of
             0 -> (x, "")
