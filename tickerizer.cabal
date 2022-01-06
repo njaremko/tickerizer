@@ -39,6 +39,8 @@ common common-options
                      , uri-encode
                      , servant
                      , servant-server
+                     , servant-lucid
+                     , lucid
                      , stm
                      , text
                      , time
