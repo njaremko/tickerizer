@@ -18,6 +18,8 @@ import Data.Trie (Trie)
 import qualified Data.Trie as Trie
 import Servant.HTML.Lucid ( HTML )
 import Lucid (Html, body_, p_, a_, With (with), href_)
+import Web.FormUrlEncoded (FromForm)
+import Data.Aeson (FromJSON, ToJSON, genericToEncoding, defaultOptions, toEncoding)
 
 type Web sig m =
   ( Has (Reader AppState) sig m,
@@ -36,11 +38,41 @@ data AppState = AppState
 
 type HealthApi = "health" :> "alive" :> Get '[JSON] Text
 
-type TickerizeApi = "tickerize" :> Capture "input" Text :> Get '[JSON] Text
+type TickerizeApi = 
+  "tickerize" :> Capture "input" Text :> Get '[JSON] Text
+  :<|> "slack" :> "tickerize" :> ReqBody '[FormUrlEncoded] SlackPayload :> Post '[JSON] SlackResponse
 
 type RootEndpoint = Get '[HTML] (Html ())
 
 type Api = HealthApi :<|> TickerizeApi :<|> RootEndpoint
+
+data SlackPayload = SlackPayload {
+  token :: Text,
+  team_id :: Text,
+  team_domain :: Text,
+  enterprise_id :: Text,
+  enterprise_name :: Text,
+  channel_id :: Text,
+  channel_name :: Text,
+  user_id :: Text,
+  user_name :: Text,
+  command :: Text,
+  text :: Text,
+  response_url :: Text,
+  trigger_id :: Text,
+  api_app_id :: Text
+} deriving stock (Eq, Show, Generic)
+
+instance FromForm SlackPayload
+
+data SlackResponse = SlackResponse {
+  text :: Text,
+  response_type :: Text
+} deriving stock (Eq, Show, Generic)
+
+instance FromJSON SlackResponse
+instance ToJSON SlackResponse where
+  toEncoding = genericToEncoding defaultOptions 
 
 rootEndpoint :: Web sig m => ServerT RootEndpoint m
 rootEndpoint = renderHome
@@ -52,12 +84,20 @@ rootEndpoint = renderHome
         p_ "To use this site, navigate to " <> with a_ [href_  (openBaseUrl baseUrl <> "/tickerize/allegedly%20brainstorming")] "Here"
 
 tickerizeApi :: Web sig m => ServerT TickerizeApi m
-tickerizeApi = tickerize 
+tickerizeApi = tickerize :<|> slackTickerize
   where
     tickerize :: Web sig m => Text -> m Text
     tickerize input = do
           AppState{tickerTrie = t} <- ask @AppState
           return . T.unwords $ processInput t <$> T.words input
+    
+    slackTickerize :: Web sig m => SlackPayload -> m SlackResponse
+    slackTickerize SlackPayload{text = input} = do
+          AppState{tickerTrie = t} <- ask @AppState
+          return SlackResponse {
+            text = T.unwords $ processInput t <$> T.words input, 
+            response_type = "ephemeral"
+          }
 
     processInput :: Trie () -> Text -> Text
     processInput t input = 

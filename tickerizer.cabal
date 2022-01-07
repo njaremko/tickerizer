@@ -33,6 +33,7 @@ common common-options
                      , envparse
                      , envy
                      , fused-effects
+                     , http-api-data
                      , quickcheck-instances
                      , relude
                      , req
