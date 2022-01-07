@@ -93,9 +93,9 @@ tickerizeApi = tickerize :<|> slackTickerize
     
     slackTickerize :: Web sig m => SlackPayload -> m SlackResponse
     slackTickerize SlackPayload{text = input} = do
-          AppState{tickerTrie = t} <- ask @AppState
+          text <- tickerize input
           return SlackResponse {
-            text = T.unwords $ processInput t <$> T.words input, 
+            text, 
             response_type = "ephemeral"
           }
 
