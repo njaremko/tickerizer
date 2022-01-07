@@ -44,7 +44,17 @@ type TickerizeApi =
 
 type RootEndpoint = Get '[HTML] (Html ())
 
-type Api = HealthApi :<|> TickerizeApi :<|> RootEndpoint
+type SlackApi = 
+  "slack" :> Get '[JSON] Text :<|>
+  "slack" :> "oauth" :> QueryParam "code" Text :> Get '[JSON] Text
+
+type Api = HealthApi :<|> TickerizeApi :<|> SlackApi :<|> RootEndpoint
+
+slackApi :: Web sig m => ServerT SlackApi m
+slackApi = doRedirect :<|> doOauth
+  where
+    doRedirect = sendIO . throwIO $ err301 { errHeaders = [("Location", "https://slack.com/oauth/v2/authorize?scope=commands&client_id=2441242254.2922169070307")] }
+    doOauth _code = return "Ok"
 
 data SlackPayload = SlackPayload {
   token :: Text,
@@ -125,7 +135,7 @@ apiProxy :: Proxy Api
 apiProxy = Proxy
 
 server :: ServerT Api WebConcrete
-server = healthApi :<|> tickerizeApi :<|> rootEndpoint
+server = healthApi :<|> tickerizeApi :<|> slackApi :<|> rootEndpoint
   where
     healthApi :: Web sig m => ServerT HealthApi m
     healthApi = return "I'm alive!"
