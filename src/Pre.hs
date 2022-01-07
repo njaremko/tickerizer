@@ -14,8 +14,10 @@ module Pre
     LiftC,
     Port,
     BaseUrl,
+    SlackClientId,
     openPort,
-    openBaseUrl
+    openBaseUrl,
+    openSlackClientId
   )
 where
 
@@ -52,4 +54,20 @@ instance ToEnv BaseUrl where
   toEnv (BaseUrl baseUrl) =
     Envy.makeEnv
       [ "BASE_URL" Envy..= baseUrl
+      ]
+
+newtype SlackClientId = SlackClientId Text
+  deriving newtype (Show, Semigroup, Monoid)
+
+openSlackClientId :: SlackClientId -> Text
+openSlackClientId (SlackClientId clientId) = clientId
+
+instance FromEnv SlackClientId where
+  fromEnv _ = SlackClientId 
+    <$> Envy.env "SLACK_CLIENT_ID" 
+
+instance ToEnv SlackClientId where
+  toEnv (SlackClientId clientId) =
+    Envy.makeEnv
+      [ "SLACK_CLIENT_ID" Envy..= clientId
       ]

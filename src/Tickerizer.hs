@@ -33,6 +33,7 @@ type WebConcrete =
 data AppState = AppState
   { baseUrl :: BaseUrl,
     port :: Port,
+    slackClientId :: SlackClientId,
     tickerTrie :: Trie ()
   }
 
@@ -53,7 +54,9 @@ type Api = HealthApi :<|> TickerizeApi :<|> SlackApi :<|> RootEndpoint
 slackApi :: Web sig m => ServerT SlackApi m
 slackApi = doRedirect :<|> doOauth
   where
-    doRedirect = sendIO . throwIO $ err301 { errHeaders = [("Location", "https://slack.com/oauth/v2/authorize?scope=commands&client_id=2441242254.2922169070307")] }
+    doRedirect = do
+      AppState{slackClientId} <- ask
+      sendIO . throwIO $ err301 { errHeaders = [("Location", "https://slack.com/oauth/v2/authorize?scope=commands&client_id=" <> encodeUtf8 (openSlackClientId slackClientId))] }
     doOauth _code = return "Ok"
 
 data SlackPayload = SlackPayload {
