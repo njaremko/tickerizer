@@ -48,6 +48,7 @@ common common-options
                      , transformers
                      , vector
                      , wai 
+                     , wai-logger
                      , warp
 
   ghc-options:         -Wall

@@ -13,7 +13,7 @@ module Tickerizer
 import Pre
 import Servant
 import qualified Data.Text as T
-import Network.Wai.Handler.Warp (run)
+import Network.Wai.Handler.Warp (runSettings, setLogger, setPort, defaultSettings)
 import Data.Trie (Trie)
 import qualified Data.Trie as Trie
 import Servant.HTML.Lucid ( HTML )
@@ -22,6 +22,7 @@ import Web.FormUrlEncoded (FromForm)
 import Data.Aeson (FromJSON, ToJSON, genericToEncoding, defaultOptions, toEncoding, Value)
 import qualified Network.HTTP.Req as Req
 import Network.HTTP.Req ((=:))
+import Network.Wai.Logger 
 
 type Web sig m =
   ( Has (Reader AppState) sig m,
@@ -167,7 +168,9 @@ appToHandler appEnv =
 runServer :: AppState -> IO ()
 runServer appState@AppState {port = port} = do
   print (("Running server on port " <> show port) :: Text)
-  run (openPort port) app
+  withStdoutLogger $ \aplogger -> do
+        let settings = setPort (openPort port) $ setLogger aplogger defaultSettings
+        runSettings settings app
   where
     handler :: WebConcrete a -> Handler a
     handler = appToHandler appState
