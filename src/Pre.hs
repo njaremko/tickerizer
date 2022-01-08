@@ -19,7 +19,12 @@ module Pre
     openPort,
     openBaseUrl,
     openSlackClientId,
-    openSlackClientSecret
+    openSlackClientSecret,
+    Web,
+    WebConcrete,
+    AppState(..),
+    SlackPayload(..),
+    SlackResponse(..)
   )
 where
 
@@ -29,6 +34,9 @@ import Control.Exception (throwIO, try)
 import Relude hiding (Reader, ask, id, runReader)
 import System.Envy (FromEnv, ToEnv)
 import qualified System.Envy as Envy
+import Data.Trie (Trie)
+import Web.FormUrlEncoded (FromForm)
+import Data.Aeson
 
 newtype Port = Port Int
   deriving newtype (Envy.Var, Show)
@@ -74,7 +82,6 @@ instance ToEnv SlackClientId where
       [ "SLACK_CLIENT_ID" Envy..= clientId
       ]
 
-
 newtype SlackClientSecret = SlackClientSecret Text
   deriving newtype (Show, Semigroup, Monoid)
 
@@ -90,3 +97,48 @@ instance ToEnv SlackClientSecret where
     Envy.makeEnv
       [ "SLACK_CLIENT_SECRET" Envy..= clientSecret
       ]
+
+type Web sig m =
+  ( Has (Reader AppState) sig m,
+    Has (Lift IO) sig m
+  )
+
+type WebConcrete = 
+  (ReaderC AppState 
+  (LiftC IO))
+
+data AppState = AppState
+  { baseUrl :: BaseUrl,
+    port :: Port,
+    slackClientId :: SlackClientId,
+    slackClientSecret :: SlackClientSecret,
+    tickerTrie :: Trie ()
+  }
+
+data SlackPayload = SlackPayload {
+  token :: Maybe Text,
+  team_id :: Maybe Text,
+  team_domain :: Maybe Text,
+  enterprise_id :: Maybe Text,
+  enterprise_name :: Maybe Text,
+  channel_id :: Maybe Text,
+  channel_name :: Maybe Text,
+  user_id :: Maybe Text,
+  user_name :: Maybe Text,
+  command :: Maybe Text,
+  text :: Text,
+  response_url :: Maybe Text,
+  trigger_id :: Maybe Text,
+  api_app_id :: Maybe Text
+} deriving stock (Eq, Show, Generic)
+
+instance FromForm SlackPayload
+
+data SlackResponse = SlackResponse {
+  text :: Text,
+  response_type :: Text
+} deriving stock (Eq, Show, Generic)
+
+instance FromJSON SlackResponse
+instance ToJSON SlackResponse where
+  toEncoding = genericToEncoding defaultOptions 

@@ -18,28 +18,10 @@ import Data.Trie (Trie)
 import qualified Data.Trie as Trie
 import Servant.HTML.Lucid ( HTML )
 import Lucid (Html, body_, p_, a_, With (with), href_)
-import Web.FormUrlEncoded (FromForm)
-import Data.Aeson (FromJSON, ToJSON, genericToEncoding, defaultOptions, toEncoding, Value)
+import Data.Aeson (Value)
 import qualified Network.HTTP.Req as Req
 import Network.HTTP.Req ((=:))
 import Network.Wai.Logger 
-
-type Web sig m =
-  ( Has (Reader AppState) sig m,
-    Has (Lift IO) sig m
-  )
-
-type WebConcrete = 
-  (ReaderC AppState 
-  (LiftC IO))
-
-data AppState = AppState
-  { baseUrl :: BaseUrl,
-    port :: Port,
-    slackClientId :: SlackClientId,
-    slackClientSecret :: SlackClientSecret,
-    tickerTrie :: Trie ()
-  }
 
 type HealthApi = "health" :> "alive" :> Get '[JSON] Text
 
@@ -72,34 +54,6 @@ slackApi = doRedirect :<|> doOauth
                           "grant_type" =: ("authorization_code" :: Text)
                   v <- Req.req Req.POST (Req.https "slack.com" Req./: "api" Req./: "oauth.v2.access") (Req.ReqBodyUrlEnc params) Req.jsonResponse mempty
                   return (Req.responseBody v :: Value)
-
-data SlackPayload = SlackPayload {
-  token :: Maybe Text,
-  team_id :: Maybe Text,
-  team_domain :: Maybe Text,
-  enterprise_id :: Maybe Text,
-  enterprise_name :: Maybe Text,
-  channel_id :: Maybe Text,
-  channel_name :: Maybe Text,
-  user_id :: Maybe Text,
-  user_name :: Maybe Text,
-  command :: Maybe Text,
-  text :: Text,
-  response_url :: Maybe Text,
-  trigger_id :: Maybe Text,
-  api_app_id :: Maybe Text
-} deriving stock (Eq, Show, Generic)
-
-instance FromForm SlackPayload
-
-data SlackResponse = SlackResponse {
-  text :: Text,
-  response_type :: Text
-} deriving stock (Eq, Show, Generic)
-
-instance FromJSON SlackResponse
-instance ToJSON SlackResponse where
-  toEncoding = genericToEncoding defaultOptions 
 
 rootEndpoint :: Web sig m => ServerT RootEndpoint m
 rootEndpoint = renderHome
