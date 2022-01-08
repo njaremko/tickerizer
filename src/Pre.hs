@@ -15,9 +15,11 @@ module Pre
     Port,
     BaseUrl,
     SlackClientId,
+    SlackClientSecret,
     openPort,
     openBaseUrl,
-    openSlackClientId
+    openSlackClientId,
+    openSlackClientSecret
   )
 where
 
@@ -70,4 +72,21 @@ instance ToEnv SlackClientId where
   toEnv (SlackClientId clientId) =
     Envy.makeEnv
       [ "SLACK_CLIENT_ID" Envy..= clientId
+      ]
+
+
+newtype SlackClientSecret = SlackClientSecret Text
+  deriving newtype (Show, Semigroup, Monoid)
+
+openSlackClientSecret :: SlackClientSecret -> Text
+openSlackClientSecret (SlackClientSecret clientSecret) = clientSecret
+
+instance FromEnv SlackClientSecret where
+  fromEnv _ = SlackClientSecret 
+    <$> Envy.env "SLACK_CLIENT_SECRET" 
+
+instance ToEnv SlackClientSecret where
+  toEnv (SlackClientSecret clientSecret) =
+    Envy.makeEnv
+      [ "SLACK_CLIENT_SECRET" Envy..= clientSecret
       ]

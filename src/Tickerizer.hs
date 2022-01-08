@@ -19,7 +19,9 @@ import qualified Data.Trie as Trie
 import Servant.HTML.Lucid ( HTML )
 import Lucid (Html, body_, p_, a_, With (with), href_)
 import Web.FormUrlEncoded (FromForm)
-import Data.Aeson (FromJSON, ToJSON, genericToEncoding, defaultOptions, toEncoding)
+import Data.Aeson (FromJSON, ToJSON, genericToEncoding, defaultOptions, toEncoding, Value)
+import qualified Network.HTTP.Req as Req
+import Network.HTTP.Req ((=:))
 
 type Web sig m =
   ( Has (Reader AppState) sig m,
@@ -34,6 +36,7 @@ data AppState = AppState
   { baseUrl :: BaseUrl,
     port :: Port,
     slackClientId :: SlackClientId,
+    slackClientSecret :: SlackClientSecret,
     tickerTrie :: Trie ()
   }
 
@@ -47,7 +50,7 @@ type RootEndpoint = Get '[HTML] (Html ())
 
 type SlackApi = 
   "slack" :> Get '[JSON] Text :<|>
-  "slack" :> "oauth" :> QueryParam "code" Text :> Get '[JSON] Text
+  "slack" :> "oauth" :> QueryParam "code" Text :> Get '[JSON] Value
 
 type Api = HealthApi :<|> TickerizeApi :<|> SlackApi :<|> RootEndpoint
 
@@ -57,7 +60,17 @@ slackApi = doRedirect :<|> doOauth
     doRedirect = do
       AppState{slackClientId} <- ask
       sendIO . throwIO $ err301 { errHeaders = [("Location", "https://slack.com/oauth/v2/authorize?scope=commands&client_id=" <> encodeUtf8 (openSlackClientId slackClientId))] }
-    doOauth _code = return "Ok"
+    doOauth :: Web sig m => Maybe Text -> m Value
+    doOauth code = do
+      AppState{slackClientId, slackClientSecret} <- ask
+      sendIO $ Req.runReq Req.defaultHttpConfig $ do
+                  let params =
+                          "client_id" =: openSlackClientId slackClientId <>
+                          "client_secret" =: openSlackClientSecret slackClientSecret <>
+                          "code" =: fromMaybe "" code <>
+                          "grant_type" =: ("authorization_code" :: Text)
+                  v <- Req.req Req.POST (Req.https "slack.com" Req./: "api" Req./: "oauth.v2.access") (Req.ReqBodyUrlEnc params) Req.jsonResponse mempty
+                  return (Req.responseBody v :: Value)
 
 data SlackPayload = SlackPayload {
   token :: Text,

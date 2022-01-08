@@ -25,6 +25,11 @@ loadAppState = do
       Left e -> error $ pack e
       Right v -> return v
 
+  slackClientSecret <-
+    decodeEnv >>= \case
+      Left e -> error $ pack e
+      Right v -> return v
+
   let tickerTrie = SF.fromList $ fmap (, ()) tickers
 
   return
@@ -32,6 +37,7 @@ loadAppState = do
       { baseUrl,
         port,
         slackClientId,
+        slackClientSecret,
         tickerTrie
       }
 
