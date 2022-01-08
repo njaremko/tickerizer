@@ -74,20 +74,20 @@ slackApi = doRedirect :<|> doOauth
                   return (Req.responseBody v :: Value)
 
 data SlackPayload = SlackPayload {
-  token :: Text,
-  team_id :: Text,
-  team_domain :: Text,
-  enterprise_id :: Text,
-  enterprise_name :: Text,
-  channel_id :: Text,
-  channel_name :: Text,
-  user_id :: Text,
-  user_name :: Text,
-  command :: Text,
+  token :: Maybe Text,
+  team_id :: Maybe Text,
+  team_domain :: Maybe Text,
+  enterprise_id :: Maybe Text,
+  enterprise_name :: Maybe Text,
+  channel_id :: Maybe Text,
+  channel_name :: Maybe Text,
+  user_id :: Maybe Text,
+  user_name :: Maybe Text,
+  command :: Maybe Text,
   text :: Text,
-  response_url :: Text,
-  trigger_id :: Text,
-  api_app_id :: Text
+  response_url :: Maybe Text,
+  trigger_id :: Maybe Text,
+  api_app_id :: Maybe Text
 } deriving stock (Eq, Show, Generic)
 
 instance FromForm SlackPayload
