@@ -77,7 +77,7 @@ tickerizeApi = tickerize :<|> slackTickerize
           text <- tickerize input
           return SlackResponse {
             text, 
-            response_type = "ephemeral"
+            response_type = "in_channel"
           }
 
     processInput :: Trie () -> Text -> Text
