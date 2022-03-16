@@ -5,6 +5,7 @@ compatibility_date = "2022-03-16"
 
 [vars]
 WORKERS_RS_VERSION = "0.0.9"
+SLACK_CLIENT_ID = "2441242254.2922169070307"
 
 [build]
 command = "cargo install -q worker-build && worker-build --release" # required
