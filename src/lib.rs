@@ -1,4 +1,3 @@
-use radix_trie::Trie;
 use serde::Serialize;
 use serde_json::Value;
 use urlencoding::decode;
@@ -7,8 +6,6 @@ use worker::*;
 
 mod tickers;
 mod utils;
-
-use tickers::TICKERS;
 
 fn log_request(req: &Request) {
     console_log!(
