@@ -33,7 +33,7 @@ fn process_word(t: &Trie<String, String>, s: &str) -> String {
     result += first_ticker;
     let remaining = &s[first_ticker.len()..];
 
-    if first_ticker.len() + 3 < s.len() {
+    if remaining.len() + 3 < s.len() {
         let second_match = t.get_ancestor(&remaining[2..].to_uppercase());
         let second_ticker = second_match
             .map(|q| q.key().map(|t| t.as_ref()).unwrap_or(""))
